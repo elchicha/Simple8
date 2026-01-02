@@ -1,13 +1,13 @@
 from emulator.alu import ALU
 from emulator.memory import Memory
-from emulator.register import Register
+from emulator.register import Register8, Register16
 
 
 class CPU:
     def __init__(self):
-        self.accumulator = Register()
-        self.program_counter = Register()
-        self.stack_pointer = Register()
+        self.accumulator = Register8()
+        self.program_counter = Register16()
+        self.stack_pointer = Register8()
 
         self.memory = Memory()
         self.alu = ALU()
@@ -25,6 +25,8 @@ class CPU:
             self._execute_sta_absolute()
         elif opcode == 0x69:
             self._execute_add_immediate()
+        elif opcode == 0x4C:
+            self._execute_jmp_absolute()
         elif opcode == 0xEA:
             self._execute_nop()
         else:
@@ -66,3 +68,13 @@ class CPU:
         """NOP - No operation, just advance PC"""
         pc = self.program_counter.get()
         self.program_counter.set(pc + 1)
+
+    def _execute_jmp_absolute(self):
+        """JMP $0200 - Jump to absolute address"""
+        pc = self.program_counter.get()
+
+        addr_low = self.memory.read_byte(pc + 1)
+        addr_high = self.memory.read_byte(pc + 2)
+        target_address = (addr_high << 8) | addr_low
+
+        self.program_counter.set(target_address)
