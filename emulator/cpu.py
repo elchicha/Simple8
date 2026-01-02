@@ -29,6 +29,10 @@ class CPU:
             self._execute_jmp_absolute()
         elif opcode == 0xEA:
             self._execute_nop()
+        elif opcode == 0xD0:
+            self._execute_bne()
+        elif opcode == 0xF0:
+            self._execute_beq()
         else:
             raise NotImplementedError(f"Opcode {opcode:02X} not implemented")
 
@@ -78,3 +82,45 @@ class CPU:
         target_address = (addr_high << 8) | addr_low
 
         self.program_counter.set(target_address)
+
+    def _execute_bne(self):
+        """BNE $nn - Branch if Not Equal (zero flag clear)"""
+        pc = self.program_counter.get()
+        offset = self.memory.read_byte(pc + 1)
+
+        if offset >= 0x80:
+            offset -= 0x100 # Convert to negative
+
+        pc = pc + 2 # Move past the BNE instruction
+
+        if not self.alu.zero_flag:
+            pc += offset
+
+        self.program_counter.set(pc)
+
+    def _execute_beq(self):
+        """BNE $nn - Branch if Equal (zero flag true)"""
+        pc = self.program_counter.get()
+        offset = self.memory.read_byte(pc + 1)
+
+        if offset >= 0x80:
+            offset -= 0x100  # Convert to negative
+
+        pc = pc + 2  # Move past the BNE instruction
+
+        if self.alu.zero_flag:
+            pc += offset
+
+        self.program_counter.set(pc)
+
+    def test_beq_branch_not_taken():
+        """BEQ - Don't branch when zero flag is clear"""
+        cpu = CPU()
+        cpu.alu.zero_flag = False
+
+        cpu.memory.write_byte(0x0000, 0xF0)
+        cpu.memory.write_byte(0x0001, 0x05)
+
+        cpu.step()
+
+        assert cpu.program_counter.get() == 0x0002
