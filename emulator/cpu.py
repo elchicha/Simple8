@@ -1,38 +1,68 @@
-class Register:
-    """An 8-bit register for CPU operations"""
+from emulator.alu import ALU
+from emulator.memory import Memory
+from emulator.register import Register
 
+
+class CPU:
     def __init__(self):
-        self._value = 0
+        self.accumulator = Register()
+        self.program_counter = Register()
+        self.stack_pointer = Register()
 
-    def get(self):
-        """Get the current value of the register"""
-        return self._value
-
-    def set(self, value):
-        """Set the value of the register to *value*"""
-        self._value = value & 0xFF # Mask to ensure 8-bit value
+        self.memory = Memory()
+        self.alu = ALU()
+        self.stack_pointer.set(0xFF)
 
 
-class ALU:
-    def __init__(self):
-        self.zero_flag = False
-        self.negative_flag = False
-        self.carry_flag = False
+    def step(self):
+        """Execute one CPU instruction (Fetch, Decode, Execute)"""
+        pc = self.program_counter.get()
+        opcode = self.memory.read_byte(pc)
 
-    def add(self, a, b):
-        """Add two numbers using the ALU"""
-        result = a + b
-        self.carry_flag = result > 0xFF
-        result = result & 0xFF
-        self.zero_flag = (result == 0x00)
-        self.negative_flag = (result & 0x80) != 0
-        return result
+        if opcode == 0xA9:
+            self._execute_lda_immediate()
+        elif opcode == 0x8D:
+            self._execute_sta_absolute()
+        elif opcode == 0x69:
+            self._execute_add_immediate()
+        elif opcode == 0xEA:
+            self._execute_nop()
+        else:
+            raise NotImplementedError(f"Opcode {opcode:02X} not implemented")
 
-    def sub(self, a, b):
-        """Subtract two numbers using the ALU"""
-        result = a - b
-        self.carry_flag = result < 0x00
-        result = result & 0xFF
-        self.zero_flag = (result == 0x00)
-        self.negative_flag = (result & 0x80) != 0
-        return result
+    def _execute_lda_immediate(self):
+        """Load Accumulator with immediate value"""
+        # Format: [0x49, value]
+        # Read the value from PC+1
+        pc = self.program_counter.get()
+        value = self.memory.read_byte(pc + 1)
+        self.accumulator.set(value)
+
+        self.program_counter.set(pc + 2)
+
+    def _execute_sta_absolute(self):
+        """Store accumulator value to absolute address"""
+        pc = self.program_counter.get()
+
+        addr_low = self.memory.read_byte(pc + 1)
+        addr_high = self.memory.read_byte(pc + 2)
+        address = (addr_high << 8) | addr_low
+
+        value = self.accumulator.get()
+        self.memory.write_byte(address, value)
+
+        self.program_counter.set(pc + 3)
+
+    def _execute_add_immediate(self):
+        """ADD #$10 - Add immediate value to accumulator"""
+        pc = self.program_counter.get()
+        operand = self.memory.read_byte(pc + 1)
+        accumulator_value = self.accumulator.get()
+        result = self.alu.add(accumulator_value, operand)
+        self.accumulator.set(result)
+        self.program_counter.set(pc + 2)
+
+    def _execute_nop(self):
+        """NOP - No operation, just advance PC"""
+        pc = self.program_counter.get()
+        self.program_counter.set(pc + 1)
