@@ -19,6 +19,10 @@ class Memory:
         self._check_address(address)
         return self._data[address]
 
+    def size(self):
+        """Return the size of the memory in bytes"""
+        return len(self._data)
+
 class MemoryAccessError(RuntimeError):
     """Raised when an address is outside the allocated RAM"""
     pass
