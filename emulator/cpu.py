@@ -25,6 +25,8 @@ class CPU:
             self._execute_sta_absolute()
         elif opcode == 0x69:
             self._execute_add_immediate()
+        elif opcode == 0xE9:
+            self._execute_sub_immediate()
         elif opcode == 0x4C:
             self._execute_jmp_absolute()
         elif opcode == 0xEA:
@@ -124,3 +126,15 @@ class CPU:
         cpu.step()
 
         assert cpu.program_counter.get() == 0x0002
+
+    def _execute_sub_immediate(self):
+        """SUB #$nn - Subtract immediate value from accumulator"""
+        pc = self.program_counter.get()
+        operand = self.memory.read_byte(pc + 1)
+        accumulator_value = self.accumulator.get()
+
+        result = self.alu.sub(accumulator_value, operand)
+
+        self.accumulator.set(result)
+
+        self.program_counter.set(pc + 2)
