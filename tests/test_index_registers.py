@@ -64,3 +64,60 @@ def test_sty_absolute():
 
     assert cpu.memory.read_byte(0x0300) == 0x77
     assert cpu.program_counter.get() == 0x03
+
+
+def test_tax():
+    """TAX - Transfer Accumulator to X"""
+    cpu = CPU()
+    cpu.accumulator.set(0x55)
+
+    # Opcode: 0xAA = TAX
+    cpu.memory.write_byte(0x0000, 0xAA)
+
+    cpu.step()
+
+    assert cpu.x_register.get() == 0x55
+    assert cpu.accumulator.get() == 0x55  # A unchanged
+    assert cpu.program_counter.get() == 0x01
+
+
+def test_tay():
+    """TAY - Transfer Accumulator to Y"""
+    cpu = CPU()
+    cpu.accumulator.set(0x66)
+
+    # Opcode: 0xA8 = TAY
+    cpu.memory.write_byte(0x0000, 0xA8)
+
+    cpu.step()
+
+    assert cpu.y_register.get() == 0x66
+    assert cpu.accumulator.get() == 0x66  # A unchanged
+
+
+def test_txa():
+    """TXA - Transfer X to Accumulator"""
+    cpu = CPU()
+    cpu.x_register.set(0x88)
+
+    # Opcode: 0x8A = TXA
+    cpu.memory.write_byte(0x0000, 0x8A)
+
+    cpu.step()
+
+    assert cpu.accumulator.get() == 0x88
+    assert cpu.x_register.get() == 0x88  # X unchanged
+
+
+def test_tya():
+    """TYA - Transfer Y to Accumulator"""
+    cpu = CPU()
+    cpu.y_register.set(0x99)
+
+    # Opcode: 0x98 = TYA
+    cpu.memory.write_byte(0x0000, 0x98)
+
+    cpu.step()
+
+    assert cpu.accumulator.get() == 0x99
+    assert cpu.y_register.get() == 0x99  # Y unchanged
