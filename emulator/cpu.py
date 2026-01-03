@@ -4,21 +4,24 @@ from emulator.register import Register8, Register16
 
 
 class CPU:
+
+
     def __init__(self):
         self.accumulator = Register8()
         self.program_counter = Register16()
         self.stack_pointer = Register8()
+        self.x_register = Register8()
+        self.y_register = Register8()
 
         self.memory = Memory()
         self.alu = ALU()
         self.stack_pointer.set(0xFF)
-
-
     def step(self):
         """Execute one CPU instruction (Fetch, Decode, Execute)"""
         pc = self.program_counter.get()
         opcode = self.memory.read_byte(pc)
 
+        # TODO: Refactor opcode handling into a dispatch table
         if opcode == 0xA9:
             self._execute_lda_immediate()
         elif opcode == 0x8D:
@@ -35,6 +38,10 @@ class CPU:
             self._execute_bne()
         elif opcode == 0xF0:
             self._execute_beq()
+        elif opcode == 0xA2:
+            self._execute_ldx_immediate()
+        elif opcode == 0xA0:
+            self._execute_ldy_immediate()
         else:
             raise NotImplementedError(f"Opcode {opcode:02X} not implemented")
 
@@ -45,6 +52,22 @@ class CPU:
         pc = self.program_counter.get()
         value = self.memory.read_byte(pc + 1)
         self.accumulator.set(value)
+
+        self.program_counter.set(pc + 2)
+
+    def _execute_ldx_immediate(self):
+        """Load X Index with immediate value"""
+        pc = self.program_counter.get()
+        value = self.memory.read_byte(pc + 1)
+        self.x_register.set(value)
+
+        self.program_counter.set(pc + 2)
+
+    def _execute_ldy_immediate(self):
+        """Load Y Index with immediate value"""
+        pc = self.program_counter.get()
+        value = self.memory.read_byte(pc + 1)
+        self.y_register.set(value)
 
         self.program_counter.set(pc + 2)
 
