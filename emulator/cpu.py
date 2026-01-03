@@ -16,34 +16,42 @@ class CPU:
         self.memory = Memory()
         self.alu = ALU()
         self.stack_pointer.set(0xFF)
+
+        # Build the opcode dispatch table (grouped by instruction type)
+        self.opcode_table = {
+            # Load instructions
+            0xA9: self._execute_lda_immediate,  # LDA #immediate
+            0xA2: self._execute_ldx_immediate,  # LDX #immediate
+            0xA0: self._execute_ldy_immediate,  # LDY #immediate
+
+            # Store instructions
+            0x8D: self._execute_sta_absolute,  # STA absolute
+
+            # Arithmetic instructions
+            0x69: self._execute_add_immediate,  # ADC #immediate
+            0xE9: self._execute_sub_immediate,  # SBC #immediate
+
+            # Branch instructions
+            0xD0: self._execute_bne,  # BNE (Branch if Not Equal)
+            0xF0: self._execute_beq,  # BEQ (Branch if Equal)
+
+            # Jump instructions
+            0x4C: self._execute_jmp_absolute,  # JMP absolute
+
+            # Other instructions
+            0xEA: self._execute_nop,  # NOP (No Operation)
+        }
+
     def step(self):
         """Execute one CPU instruction (Fetch, Decode, Execute)"""
         pc = self.program_counter.get()
         opcode = self.memory.read_byte(pc)
 
-        # TODO: Refactor opcode handling into a dispatch table
-        if opcode == 0xA9:
-            self._execute_lda_immediate()
-        elif opcode == 0x8D:
-            self._execute_sta_absolute()
-        elif opcode == 0x69:
-            self._execute_add_immediate()
-        elif opcode == 0xE9:
-            self._execute_sub_immediate()
-        elif opcode == 0x4C:
-            self._execute_jmp_absolute()
-        elif opcode == 0xEA:
-            self._execute_nop()
-        elif opcode == 0xD0:
-            self._execute_bne()
-        elif opcode == 0xF0:
-            self._execute_beq()
-        elif opcode == 0xA2:
-            self._execute_ldx_immediate()
-        elif opcode == 0xA0:
-            self._execute_ldy_immediate()
-        else:
+        handler = self.opcode_table.get(opcode)
+        if handler is None:
             raise NotImplementedError(f"Opcode {opcode:02X} not implemented")
+
+        handler()
 
     def _execute_lda_immediate(self):
         """Load Accumulator with immediate value"""
